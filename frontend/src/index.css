@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-gray-900 bg-gray-50 antialiased min-h-screen relative overflow-x-hidden transition-colors duration-300;
+  }
+  .dark body {
+    @apply text-white;
+    background: radial-gradient(circle at top left, #1a1f3b, #020617);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-lg transition-colors;
+  }
+  .btn-gradient {
+    @apply bg-gradient-to-r from-purple-500 to-cyan-400 text-white font-medium rounded-full px-6 py-2 transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:bg-[length:150%];
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500 dark:from-purple-400 dark:to-cyan-400;
+  }
+}
+
+/* ─── Hide scrollbars everywhere, preserve scroll behaviour ─── */
+*,
+*::before,
+*::after {
+  /* Firefox */
+  scrollbar-width: none;
+}
+
+/* Chrome, Safari, Edge, Opera */
+*::-webkit-scrollbar {
+  display: none;
+}
+
