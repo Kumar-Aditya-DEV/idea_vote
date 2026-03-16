@@ -13,6 +13,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
 import ThemeToggle from './components/ThemeToggle';
 import { IdeasProvider } from './context/IdeasContext';
+import Premium from './pages/Premium';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
                   <Route path="/how-it-works" element={<ProtectedRoute><HowItWorks /></ProtectedRoute>} />
                   <Route path="/idea/:id" element={<ProtectedRoute><IdeaDetails /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </main>
