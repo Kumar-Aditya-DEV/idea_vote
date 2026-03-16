@@ -7,6 +7,7 @@ export default function Login() {
   const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,13 +27,22 @@ export default function Login() {
     return errs;
   };
 
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [provider, setProvider] = useState('');
+
   const handleLogin = (e, override = null) => {
     if (e) e.preventDefault();
 
-    // When using Google/GitHub we skip validation and use a default user
+    // When using Google/GitHub we simulate a redirect
     if (override) {
-      setUser(override);
-      navigate('/discover');
+      setIsRedirecting(true);
+      setProvider(override.name.split(' ')[0]);
+      
+      // Simulate external redirect delay
+      setTimeout(() => {
+        setUser(override);
+        navigate('/discover');
+      }, 1500);
       return;
     }
 
@@ -54,6 +64,21 @@ export default function Login() {
 
   const inputClass = (field) =>
     `w-full bg-gray-50 dark:bg-[#020617] border rounded-xl px-4 py-3.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 transition-all font-medium ${errors[field] ? 'border-red-400 dark:border-red-400' : 'border-gray-200 dark:border-white/10 focus:border-purple-500/50'}`;
+
+  if (isRedirecting) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[85vh] bg-white dark:bg-[#020617] text-gray-900 dark:text-white transition-colors duration-500">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center font-bold text-xl text-purple-500">
+            {provider[0]}
+          </div>
+        </div>
+        <h2 className="mt-8 text-2xl font-bold animate-pulse">Redirecting to {provider}...</h2>
+        <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">Securing your session with IdeaSpark</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[85vh] px-4 relative">
