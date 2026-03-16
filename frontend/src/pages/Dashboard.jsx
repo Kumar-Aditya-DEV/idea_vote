@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Zap, ArrowUp, MessageSquare, Eye, Plus, Search, SlidersHorizontal, ArrowUpRight, MessageCircle } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
 import IdeaCard from '../components/IdeaCard';
@@ -6,12 +6,45 @@ import { Link } from 'react-router-dom';
 import { IdeasContext } from '../context/IdeasContext';
 
 export default function Dashboard() {
-  const { ideas, deleteIdea } = useContext(IdeasContext);
+  const { deleteIdea } = useContext(IdeasContext);
   const [filterText, setFilterText] = useState('');
-  
-  const myIdeas = ideas.filter(i => (i.isOwned || i.isSaved) && 
-    (i.title.toLowerCase().includes(filterText.toLowerCase()) || 
-     i.description.toLowerCase().includes(filterText.toLowerCase()))
+  const [myIdeas, setMyIdeas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    import('../services/api').then(({ default: api }) => {
+      api.get('/ideas/mine')
+        .then(res => {
+          const mapped = res.data.map(idea => ({
+            id: idea._id,
+            title: idea.title,
+            description: idea.description,
+            tags: idea.tags || [],
+            votes: idea.upvotes - idea.downvotes,
+            saves: idea.saves || 0,
+            price: idea.price || 'cheap',
+            rating: idea.averageRating || 3,
+            thumbnail: idea.thumbnail ? `http://localhost:5000${idea.thumbnail}` : null,
+            author: {
+              name: idea.createdBy?.name || 'Anonymous',
+              avatar: idea.createdBy?.avatar || 'https://i.pravatar.cc/150?img=1'
+            },
+            time: new Date(idea.createdAt).toLocaleDateString(),
+            isOwned: true
+          }));
+          setMyIdeas(mapped);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        });
+    });
+  }, []);
+
+  const filteredIdeas = myIdeas.filter(i => 
+    i.title.toLowerCase().includes(filterText.toLowerCase()) || 
+    i.description.toLowerCase().includes(filterText.toLowerCase())
   );
 
   return (
@@ -71,16 +104,19 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-        {myIdeas.length === 0 && (
+        {loading ? (
+          <div className="col-span-full py-16 text-center text-gray-500">Loading your sparks...</div>
+        ) : filteredIdeas.length === 0 ? (
           <div className="col-span-full py-16 text-center">
             <p className="text-5xl mb-3">💡</p>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No sparks yet!</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No sparks found!</h3>
             <p className="text-gray-500 text-sm mb-4">Click "Create New Spark" to publish your first idea.</p>
           </div>
+        ) : (
+          filteredIdeas.map((idea) => (
+            <IdeaCard key={idea.id} idea={idea} isDashboard={true} />
+          ))
         )}
-        {myIdeas.map((idea) => (
-          <IdeaCard key={idea.id} idea={idea} isDashboard={true} />
-        ))}
         
         <Link to="/submit" className="bg-gray-50 dark:bg-[#020617]/50 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:border-purple-500/50 hover:bg-white dark:hover:bg-white/5 transition-all group min-h-[300px]">
           <div className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 p-4 rounded-full mb-6 group-hover:scale-110 transition-transform shadow-lg">

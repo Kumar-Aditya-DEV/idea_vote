@@ -1,18 +1,44 @@
-import { useState, useContext, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { ImageIcon, X } from 'lucide-react';
-import { IdeasContext } from '../context/IdeasContext';
+import { AuthContext } from '../context/AuthContext';
+import api from '../services/api';
 
 export default function CommentSection({ ideaId }) {
-  const { ideas, addComment, likeComment, addReply } = useContext(IdeasContext);
-  const idea = ideas.find(i => i.id === ideaId);
-  const comments = idea?.comments || [];
+  const { user } = useContext(AuthContext);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const [commentText, setCommentText] = useState('');
   const [replyText, setReplyText] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [visibleCount, setVisibleCount] = useState(2);
+  const [visibleCount, setVisibleCount] = useState(3);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const { data } = await api.get(`/comments/${ideaId}`);
+        const mapped = data.map(c => ({
+          id: c._id,
+          text: c.text,
+          likes: c.likes || 0,
+          time: new Date(c.createdAt).toLocaleDateString(),
+          author: {
+            name: c.userId?.name || 'Anonymous',
+            avatar: c.userId?.avatar || 'https://i.pravatar.cc/150?img=1'
+          },
+          replies: c.replies || []
+        }));
+        setComments(mapped);
+      } catch (err) {
+        console.error('Error fetching comments:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchComments();
+  }, [ideaId]);
 
   const handleImageClick = () => {
     fileInputRef.current?.click();
@@ -34,30 +60,50 @@ export default function CommentSection({ ideaId }) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleLike = (commentId) => {
-    likeComment(ideaId, commentId);
+  const handleLike = async (commentId) => {
+    try {
+      await api.post(`/comments/${commentId}/like`);
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, likes: c.likes + 1 } : c));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleReplyPost = (commentId) => {
-    if (!replyText.trim()) return;
-    addReply(ideaId, commentId, replyText);
+    // Reply logic would go here connecting to real API
     setReplyText('');
     setReplyingTo(null);
   };
 
-  const handlePost = () => {
-    if (!commentText.trim() && !selectedImage) return;
-    addComment(ideaId, commentText, selectedImage);
-    setCommentText('');
-    setSelectedImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+  const handlePost = async () => {
+    if (!commentText.trim()) return;
+    try {
+      const { data } = await api.post('/comments', { ideaId, text: commentText });
+      
+      const newComment = {
+        id: data._id,
+        text: data.text,
+        likes: 0,
+        time: 'Just now',
+        author: {
+          name: data.userId?.name || user?.name || 'Anonymous',
+          avatar: data.userId?.avatar || user?.avatar || 'https://i.pravatar.cc/150?img=1'
+        },
+        replies: []
+      };
 
-  const handleLoadMore = () => {
-    setVisibleCount(prev => prev + 3);
+      setComments(prev => [newComment, ...prev]);
+      setCommentText('');
+      setSelectedImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      console.error('Error posting comment:', err);
+    }
   };
 
   const visibleComments = comments.slice(0, visibleCount);
+
+  if (loading) return <div className="mt-8 text-center text-gray-500">Loading comments...</div>;
 
   return (
     <div className="mt-16 max-w-4xl pt-8 relative">
@@ -123,20 +169,12 @@ export default function CommentSection({ ideaId }) {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-gray-900 dark:text-white/90">{comment.author.name}</span>
-                      {comment.author.role && (
-                        <span className="bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                          {comment.author.role}
-                        </span>
-                      )}
                     </div>
                     <span className="text-xs text-gray-500 font-medium">{comment.time}</span>
                   </div>
                   <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-4">
                     {comment.text}
                   </p>
-                  {comment.image && (
-                    <img src={comment.image} alt="Feedback" className="max-h-64 rounded-xl mb-4 border border-gray-100 dark:border-white/5" />
-                  )}
                   <div className="flex items-center gap-4 text-xs font-semibold text-gray-500">
                     <button 
                       onClick={() => handleLike(comment.id)}
@@ -145,50 +183,7 @@ export default function CommentSection({ ideaId }) {
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9H3v10h10.28a2 2 0 0 0 1.95-1.57l2.36-10.3A2 2 0 0 0 15.63 7H14v2zm-4 1H7v8h3v-8z"/></svg>
                       {comment.likes}
                     </button>
-                    <button 
-                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                      className="hover:text-gray-900 dark:hover:text-white transition-colors"
-                    >
-                      Reply
-                    </button>
                   </div>
-
-                  {replyingTo === comment.id && (
-                    <div className="mt-4 flex gap-3">
-                      <input 
-                        type="text"
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        placeholder="Write a reply..."
-                        className="flex-1 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-purple-500/50"
-                      />
-                      <button 
-                        onClick={() => handleReplyPost(comment.id)}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-purple-700 transition-colors"
-                      >
-                        Reply
-                      </button>
-                    </div>
-                  )}
-
-                  {comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-4 ml-2 pl-4 border-l-2 border-gray-100 dark:border-white/5 space-y-4">
-                      {comment.replies.map(reply => (
-                        <div key={reply.id} className="flex gap-3">
-                          <img src={reply.author.avatar} alt={reply.author.name} className="w-8 h-8 rounded-full" />
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-bold text-xs text-gray-900 dark:text-white/90">{reply.author.name}</span>
-                              <span className="text-[10px] text-gray-500">{reply.time}</span>
-                            </div>
-                            <p className="text-gray-700 dark:text-gray-300 text-xs leading-relaxed">
-                              {reply.text}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -201,7 +196,7 @@ export default function CommentSection({ ideaId }) {
       {comments.length > visibleCount && (
         <div className="mt-8 text-center flex items-center justify-center">
           <button 
-            onClick={handleLoadMore}
+            onClick={() => setVisibleCount(prev => prev + 3)}
             className="text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center gap-2"
           >
             Load more feedback <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -209,7 +204,6 @@ export default function CommentSection({ ideaId }) {
         </div>
       )}
     </div>
-
   );
 }
 

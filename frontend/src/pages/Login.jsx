@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Check, User } from 'lucide-react';
 
 export default function Login() {
-  const { setUser } = useContext(AuthContext);
+  const { user, login, register, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
 
@@ -12,25 +12,23 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [keepLoggedIn, setKeepLoggedIn] = useState(false);
-  const [showSignupMessage, setShowSignupMessage] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
   const [errors, setErrors] = useState({});
-
-  // Generate a deterministic avatar based on the email so it's consistent
-  const getAvatar = (email) =>
-    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(email || 'User')}&backgroundColor=6d28d9,0e7490&scale=80`;
+  const [apiError, setApiError] = useState('');
 
   const validate = () => {
     const errs = {};
-    if (!name.trim()) errs.name = 'Name is required';
+    if (isSignup && !name.trim()) errs.name = 'Name is required';
     if (!email.trim()) errs.email = 'Email is required';
     if (!password.trim()) errs.password = 'Password is required';
+    else if (isSignup && password.length < 6) errs.password = 'Password must be at least 6 characters';
     return errs;
   };
 
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [provider, setProvider] = useState('');
 
-  const handleLogin = (e, override = null) => {
+  const handleLogin = async (e, override = null) => {
     if (e) e.preventDefault();
 
     // When using Google/GitHub we simulate a redirect
@@ -49,17 +47,24 @@ export default function Login() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    setUser({
-      name: name.trim(),
-      email: email.trim(),
-      avatar: getAvatar(email.trim()),
-    });
-    navigate('/discover');
+    setApiError('');
+    try {
+      if (isSignup) {
+        await register(name.trim(), email.trim(), password.trim());
+      } else {
+        await login(email.trim(), password.trim());
+      }
+      navigate('/discover');
+    } catch (err) {
+      setApiError(err.response?.data?.message || 'Something went wrong');
+    }
   };
 
-  const handleSignupClick = (e) => {
+  const toggleMode = (e) => {
     e.preventDefault();
-    setShowSignupMessage(true);
+    setIsSignup(!isSignup);
+    setErrors({});
+    setApiError('');
   };
 
   const inputClass = (field) =>
@@ -86,36 +91,40 @@ export default function Login() {
 
       <div className="w-full max-w-md bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl p-10 shadow-[0_0_50px_rgba(168,85,247,0.15)] relative z-10 transition-colors">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">Welcome back</h1>
+          <h1 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
+            {isSignup ? 'Create an Account' : 'Welcome back'}
+          </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm max-w-[260px] mx-auto">
-            Enter your details to access your sparks
+            {isSignup ? 'Join IdeaSpark and start validating your ideas' : 'Enter your details to access your sparks'}
           </p>
         </div>
 
         <form className="space-y-5" onSubmit={handleLogin}>
-          {showSignupMessage && (
+          {apiError && (
             <p className="text-red-500 text-sm font-semibold text-center bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl py-2.5">
-              Create your account here.
+              {apiError}
             </p>
           )}
 
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-800 dark:text-white/90">
-              Full Name
-            </label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                value={name}
-                onChange={e => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
-                placeholder="e.g. Alex Rivera"
-                className={`${inputClass('name')} pl-11`}
-              />
+          {/* Name - only on signup */}
+          {isSignup && (
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800 dark:text-white/90">
+                Full Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => { setName(e.target.value); setErrors(prev => ({ ...prev, name: '' })); }}
+                  placeholder="e.g. Alex Rivera"
+                  className={`${inputClass('name')} pl-11`}
+                />
+              </div>
+              {errors.name && <p className="text-red-500 text-xs mt-1 font-medium">{errors.name}</p>}
             </div>
-            {errors.name && <p className="text-red-500 text-xs mt-1 font-medium">{errors.name}</p>}
-          </div>
+          )}
 
           {/* Email */}
           <div>
@@ -165,7 +174,7 @@ export default function Login() {
             type="submit"
             className="w-full bg-gradient-to-r from-purple-500 to-cyan-400 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] text-white font-bold py-3.5 rounded-xl transition-all hover:scale-[1.02]"
           >
-            Login to Spark
+            {isSignup ? 'Create Account' : 'Login to Spark'}
           </button>
         </form>
 
@@ -202,13 +211,13 @@ export default function Login() {
         </div>
 
         <p className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
-          Don't have an account?{' '}
+          {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
           <a
             href="#"
-            onClick={handleSignupClick}
+            onClick={toggleMode}
             className="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 font-bold transition-colors"
           >
-            Signup
+            {isSignup ? 'Login' : 'Signup'}
           </a>
         </p>
       </div>

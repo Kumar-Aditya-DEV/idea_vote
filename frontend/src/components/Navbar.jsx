@@ -55,11 +55,11 @@ const PROFILE_MENU = [
   { label: 'Profile', icon: User, path: '/dashboard' },
   { label: 'Settings', icon: Settings, path: '/dashboard' },
   { label: 'More Options', icon: ChevronRight, path: '/dashboard' },
-  { label: 'Premium', icon: Star, path: '/dashboard', badge: 'PRO' },
+  { label: 'Premium', icon: Star, path: '/premium', badge: 'PRO' },
 ];
 
 export default function Navbar() {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -87,7 +87,7 @@ export default function Navbar() {
   const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
 
   const handleLogout = () => {
-    setUser(null);
+    if (logout) logout();
     setProfileOpen(false);
     navigate('/');
   };

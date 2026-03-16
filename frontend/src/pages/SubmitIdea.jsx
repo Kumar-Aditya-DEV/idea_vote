@@ -56,7 +56,7 @@ export default function SubmitIdea() {
   };
 
   // ---- Publish ----
-  const handlePublish = (e) => {
+  const handlePublish = async (e) => {
     e.preventDefault();
     const newErrors = {};
     if (!title.trim()) newErrors.title = 'Title is required';
@@ -65,26 +65,25 @@ export default function SubmitIdea() {
 
     const categoryTag = category ? category.toUpperCase().replace(/\s/g, '') : 'GENERAL';
 
-    const newIdea = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      description: summary.trim() || description.trim().slice(0, 120),
-      tags: [categoryTag],
-      votes: 0,
-      price,
-      rating: 3,
-      thumbnail: thumbnailPreview,
-      author: {
-        name: user?.name || 'Anonymous',
-        avatar: user?.avatar || 'https://i.pravatar.cc/150?img=1',
-      },
-      time: 'Just now',
-      isOwned: true,
-    };
+    const formData = new FormData();
+    formData.append('title', title.trim());
+    formData.append('description', description.trim());
+    formData.append('summary', summary.trim() || description.trim().slice(0, 120));
+    formData.append('price', price);
+    formData.append('tags', JSON.stringify([categoryTag]));
+    formData.append('category', categoryTag);
 
-    addIdea(newIdea);
-    setPublished(true);
-    setTimeout(() => navigate('/discover'), 2000);
+    if (thumbnail) {
+      formData.append('thumbnail', thumbnail);
+    }
+
+    try {
+      await addIdea(formData);
+      setPublished(true);
+      setTimeout(() => navigate('/discover'), 2000);
+    } catch (err) {
+      setErrors({ description: 'Failed to publish idea. Please try again.' });
+    }
   };
 
   if (published) {
