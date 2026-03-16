@@ -71,6 +71,7 @@ export default function Navbar() {
   const profileRef = useRef(null);
 
   const isLogin = location.pathname === '/' || location.pathname === '/login';
+  const hideSearchBar = ['/discover', '/trending', '/dashboard'].includes(location.pathname);
   const unreadCount = notifications.filter(n => n.unread).length;
 
   // Close dropdowns when clicking outside
@@ -109,7 +110,7 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
-            <SearchBar className="hidden md:block w-64" />
+            {!hideSearchBar && <SearchBar className="hidden md:block w-64" />}
 
             {location.pathname.startsWith('/idea') && (
               <Link to="/submit" className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:opacity-90 text-white text-sm font-medium rounded-full px-4 py-1.5 transition-all">
