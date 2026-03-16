@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Zap, ArrowUp, MessageSquare, Eye, Plus, Search, SlidersHorizontal, ArrowUpRight, MessageCircle } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
 import IdeaCard from '../components/IdeaCard';
@@ -7,7 +7,12 @@ import { IdeasContext } from '../context/IdeasContext';
 
 export default function Dashboard() {
   const { ideas, deleteIdea } = useContext(IdeasContext);
-  const myIdeas = ideas.filter(i => i.isOwned);
+  const [filterText, setFilterText] = useState('');
+  
+  const myIdeas = ideas.filter(i => (i.isOwned || i.isSaved) && 
+    (i.title.toLowerCase().includes(filterText.toLowerCase()) || 
+     i.description.toLowerCase().includes(filterText.toLowerCase()))
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-12 pt-12 pb-24">
@@ -51,7 +56,13 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-            <input type="text" placeholder="Filter my ideas..." className="w-full bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-all font-medium shadow-sm" />
+            <input 
+              type="text" 
+              placeholder="Filter my ideas..." 
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              className="w-full bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-all font-medium shadow-sm" 
+            />
           </div>
           <button className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 p-2.5 rounded-xl transition-all shadow-sm">
             <SlidersHorizontal className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" />
