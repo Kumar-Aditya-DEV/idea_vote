@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import IdeaDetails from './pages/IdeaDetails';
 import Dashboard from './pages/Dashboard';
 import Trending from './pages/Trending';
+import HowItWorks from './pages/HowItWorks';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
@@ -27,6 +28,7 @@ function App() {
                   <Route path="/discover" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                   <Route path="/submit" element={<ProtectedRoute><SubmitIdea /></ProtectedRoute>} />
                   <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
+                  <Route path="/how-it-works" element={<ProtectedRoute><HowItWorks /></ProtectedRoute>} />
                   <Route path="/idea/:id" element={<ProtectedRoute><IdeaDetails /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
