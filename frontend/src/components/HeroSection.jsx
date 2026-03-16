@@ -1,4 +1,12 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function HeroSection({ onExploreClick }) {
+  const navigate = useNavigate();
+
+  const handleExploreClick = () => {
+    navigate('/trending');
+  };
+
   return (
     <div className="flex flex-col items-center text-center pt-24 pb-20 px-4 max-w-4xl mx-auto">
       <div className="flex items-center gap-2 bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 rounded-full px-4 py-1.5 mb-8 shadow-lg transition-colors">
@@ -16,12 +24,15 @@ export default function HeroSection({ onExploreClick }) {
       
       <div className="flex items-center gap-4">
         <button
-          onClick={onExploreClick}
+          onClick={handleExploreClick}
           className="bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] text-white text-lg font-medium px-8 py-3.5 rounded-2xl transition-all hover:-translate-y-1"
         >
           Explore Ideas
         </button>
-        <button className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white text-lg font-medium px-8 py-3.5 rounded-2xl transition-all hover:-translate-y-1 shadow-sm">
+        <button
+          onClick={() => navigate('/how-it-works')}
+          className="bg-white dark:bg-[#0f172a] border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white text-lg font-medium px-8 py-3.5 rounded-2xl transition-all hover:-translate-y-1 shadow-sm"
+        >
           How it Works
         </button>
       </div>
